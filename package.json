@@ -4,12 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "cross-env NODE_ENV=production node index.js",
+    "dev": "cross-env NODE_ENV=development nodemon index.js",
+    "test": "cross-env NODE_ENV=test jest --verbose --runInBand",
     "build:ui": "@powershell Remove-Item -Recurse -Force dist && cd ../part3/phonebook/ && npm run build && @powershell Copy-Item dist -Recurse ../../phonebook/",
     "deploy": "fly deploy",
     "deploy:full": "npm run build:ui && npm run deploy",
-    "test": "jest --verbose",
     "lint": "eslint ."
   },
   "author": "Francis Nguyen",
