@@ -4,6 +4,8 @@ const Blog = require('../models/blog')
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
   response.json(blogs)
+
+  //Old promise chaining:
   // Blog
   //   .find({})
   //   .then(blogs => {
@@ -11,11 +13,21 @@ blogsRouter.get('/', async (request, response) => {
   //   })
 })
 
-blogsRouter.post('/', async (request, response) => {
-  const blog = new Blog(request.body)
+blogsRouter.post('/', (request, response, next) => {
+  const body = request.body
+  const newBlog = new Blog({
+    title: body.title,
+    author: body.author,
+    url: body.url,
+    likes: body.number
+  })
 
-  const result = await blog.save()
-  response.status(201).json(result)
+  newBlog.save()
+    .then(savedBlog => {
+      response.status(201).json(savedBlog)
+    })
+    .catch(error => next(error))
+
   // blog
   //   .save()
   //   .then(result => {
