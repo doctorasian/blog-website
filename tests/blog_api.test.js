@@ -1,31 +1,16 @@
 const mongoose = require('mongoose')
 const supertest = require('supertest')
+const helper = require('./test_helper')
 const app = require('../app')
 const api = supertest(app)
 const Blog = require('../models/blog')
 
-const initialBlogs = [
-  {
-    _id: '5a422aa71b54a676234d17f8',
-    title: 'Luffy D. Monkey: Dead or Alive',
-    author: 'test author',
-    url: 'example.com',
-    likes: 25,
-  },
-  {
-    _id: '8a422aa71b54a676234d17f2',
-    title: 'test blog two',
-    author: 'test author two',
-    url: 'example.com',
-    likes: 32,
-  }
-]
 
 beforeEach(async () => {
   await Blog.deleteMany({})
-  let blogObject = new Blog(initialBlogs[0])
+  let blogObject = new Blog(helper.initialBlogs[0])
   await blogObject.save()
-  blogObject = new Blog(initialBlogs[1])
+  blogObject = new Blog(helper.initialBlogs[1])
   await blogObject.save()
 })
 
@@ -39,7 +24,7 @@ test('blogs are returned as json', async () => {
 test('all blogs are returned', async () => {
   const response = await api.get('/api/blogs')
 
-  expect(response.body).toHaveLength(initialBlogs.length)
+  expect(response.body).toHaveLength(helper.initialBlogs.length)
 })
 
 test('a specific blog is within the returned blogs', async () => {
@@ -53,7 +38,6 @@ test('a specific blog is within the returned blogs', async () => {
 
 test('a valid blog can be added', async () => {
   const newBlog = {
-    _id: '5a422aa71b54a676234d17f8',
     title: 'Newly Added Blog',
     author: 'test author',
     url: 'example.com',
@@ -66,14 +50,30 @@ test('a valid blog can be added', async () => {
     .expect(201)
     .expect('Content-Type', /application\/json/)
 
-  const response = await api.get('/api/blogs')
-  const titles = response.body.map(result => result.title)
+  const blogsAtEnd = await helper.blogsInDb()
+  expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
 
-  expect(response.body).toHaveLength(initialBlogs.length + 1)
+  const titles = blogsAtEnd.map(result => result.title)
   expect(titles).toContain(
     'Newly Added Blog'
   )
 }, 100000)
+
+test('blog without title is not added', async () => {
+  const newBlog = {
+    author: 'test author',
+    url: 'example.com',
+    likes: 12,
+  }
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(400)
+
+  const blogsAtEnd = await helper.blogsInDb()
+  expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+})
 
 afterAll(async () => {
   await mongoose.connection.close()
